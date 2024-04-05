@@ -1,36 +1,55 @@
-# Python package
-# Create and test a Python package on multiple Python versions.
-# Add steps that analyze code, save the dist with the build record, publish to a PyPI-compatible index, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/python
-
 trigger:
 - main
 
 pool:
   vmImage: ubuntu-latest
-strategy:
-  matrix:
-    Python27:
-      python.version: '2.7'
-    Python35:
-      python.version: '3.5'
-    Python36:
-      python.version: '3.6'
-    Python37:
-      python.version: '3.7'
 
-steps:
-- task: UsePythonVersion@0
-  inputs:
-    versionSpec: '$(python.version)'
-  displayName: 'Use Python $(python.version)'
+stages:
+- stage: CI
+  displayName: 'Continuous Integration'
+  jobs:
+  - job: Build
+    displayName: 'Build Application'
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.8'
+      displayName: 'Use Python 3.8'
 
-- script: |
-    python -m pip install --upgrade pip
-    pip install -r requirements.txt
-  displayName: 'Install dependencies'
+    - script: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+      displayName: 'Install dependencies'
 
-- script: |
-    pip install pytest pytest-azurepipelines
-    pytest
-  displayName: 'pytest'
+  - job: Tests
+    displayName: 'Run Tests'
+    steps:
+    - script: |
+        pip install pytest pytest-azurepipelines
+        pytest
+      displayName: 'pytest'
+
+  - job: SecurityTests
+    displayName: 'Run Security Tests'
+    steps:
+    - script: |
+        pip install bandit
+        bandit -r .
+      displayName: 'Security analysis with Bandit'
+
+- stage: CD
+  displayName: 'Continuous Deployment'
+  jobs:
+  - deployment: Deploy
+    displayName: 'Deploy to Docker'
+    environment: 
+      name: 'Production'
+      resourceType: virtualMachine
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - script: |
+              docker build -t python-sample-vscode-flask-tutorial .
+              docker run -d -p 80:80 python-sample-vscode-flask-tutorial
+            displayName: 'Build and Run Docker Image'
