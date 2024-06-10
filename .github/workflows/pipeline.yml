@@ -10,6 +10,7 @@ env:
 
 jobs:
   build:
+    name: CI (Build)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -27,6 +28,7 @@ jobs:
 
   test:
     needs: build
+    name: CI (Test & Validations)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -54,6 +56,7 @@ jobs:
 
   security_tests:
     needs: build
+    name: CI (Security Tests)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -67,6 +70,7 @@ jobs:
 
   deploy:
     needs: [test, security_tests]
+    name: CD (Deploy on Docker Hub)
     runs-on: ubuntu-latest
     environment: production
     steps:
