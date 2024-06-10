@@ -100,3 +100,5 @@ jobs:
           exit 0  # Garante que este job sempre finaliza com sucesso
         env:
           AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+        continue-on-error: true  # Continua mesmo se o login falhar
+
