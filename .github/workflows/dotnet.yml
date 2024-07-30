@@ -1,0 +1,60 @@
+name: CI/CD Workflow
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+  tests:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
+      - name: Run tests
+        run: |
+          pip install pytest pytest-cov
+          pytest
+
+  security_tests:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
+      - name: Run security tests
+        run: |
+          pip install bandit
+          bandit -r .
+        continue-on-error: true
+
+  deploy:
+    needs: [tests, security_tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
+      - name: Build and Run Docker Image
+        run: |
+          docker build -t python-sample-vscode-flask-tutorial .
+          docker run -d -p 80:80 python-sample-vscode-flask-tutorial
